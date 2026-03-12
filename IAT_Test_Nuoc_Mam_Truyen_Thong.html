@@ -295,6 +295,7 @@
         <div id="end-screen" class="hidden">
             <h1>Hoàn thành!</h1>
             <p>Cảm ơn bạn đã tham gia.</p>
+            <p style="font-size: 18px; color: #333; margin: 20px 0; font-weight: bold;">Hãy điền những kết quả này vào form</p>
             <p id="d-score-display"></p>
             <p style="font-size: 14px; color: #666; margin-top: 20px;">Dữ liệu đã được tải về tự động.</p>
             <p style="font-size: 14px; color: #666;">Bạn có thể đóng tab này.</p>
@@ -337,7 +338,7 @@
         // Word lists
         const words = {
             traditional: ["làng nghề", "thủ công", "thùng gỗ", "gia truyền", "lâu đời", "ủ chượp"],
-            industrial: ["hệ thống", "nhà máy", "công nghệ", "hiện đại", "công ti", "doanh nghiệp"],
+            industrial: ["hệ thống", "nhà máy", "công nghệ", "hiện đại", "công ty", "doanh nghiệp"],
             positive: ["may mắn", "yêu thương", "vui vẻ", "hạnh phúc", "an toàn", "tình bạn"],
             negative: ["bệnh dịch", "chết chóc", "tai nạn", "độc hại", "chiến tranh", "bi kịch"]
         };
@@ -441,7 +442,7 @@
                         </div>
                         <div class="word-category">
                             <h3>CÔNG NGHIỆP:</h3>
-                            <p>hệ thống, nhà máy, công nghệ, hiện đại, công ti, doanh nghiệp</p>
+                            <p>hệ thống, nhà máy, công nghệ, hiện đại, công ty, doanh nghiệp</p>
                         </div>
                         <div class="word-category">
                             <h3>TÍCH CỰC:</h3>
@@ -510,43 +511,82 @@
             
             recentResponses = []; // Reset response tracking for new block
             
-            // Determine colors based on category content
+            // Determine colors based on block content
             let leftColor = 'blue';
             let rightColor = 'blue';
             
-            // Check if left side contains traditional/industrial (green)
-            if (block.leftWords.includes(words.traditional[0]) || block.leftWords.includes(words.industrial[0])) {
-                leftColor = 'green';
-            }
-            // Check if left side contains positive/negative (blue)
-            if (block.leftWords.includes(words.positive[0]) || block.leftWords.includes(words.negative[0])) {
-                leftColor = 'blue';
+            // For mixed blocks (has both traditional/industrial AND positive/negative)
+            // We need to color them separately based on position
+            
+            // Check left side
+            let leftHasTraditional = block.leftWords.some(w => words.traditional.includes(w));
+            let leftHasIndustrial = block.leftWords.some(w => words.industrial.includes(w));
+            let leftHasPositive = block.leftWords.some(w => words.positive.includes(w));
+            let leftHasNegative = block.leftWords.some(w => words.negative.includes(w));
+            
+            // Check right side
+            let rightHasTraditional = block.rightWords.some(w => words.traditional.includes(w));
+            let rightHasIndustrial = block.rightWords.some(w => words.industrial.includes(w));
+            let rightHasPositive = block.rightWords.some(w => words.positive.includes(w));
+            let rightHasNegative = block.rightWords.some(w => words.negative.includes(w));
+            
+            // Determine if this is a mixed block
+            let leftIsMixed = (leftHasTraditional || leftHasIndustrial) && (leftHasPositive || leftHasNegative);
+            let rightIsMixed = (rightHasTraditional || rightHasIndustrial) && (rightHasPositive || rightHasNegative);
+            
+            // For pure blocks, use single color
+            if (!leftIsMixed) {
+                if (leftHasTraditional || leftHasIndustrial) {
+                    leftColor = 'green';
+                } else if (leftHasPositive || leftHasNegative) {
+                    leftColor = 'blue';
+                }
             }
             
-            // Check if right side contains traditional/industrial (green)
-            if (block.rightWords.includes(words.traditional[0]) || block.rightWords.includes(words.industrial[0])) {
-                rightColor = 'green';
-            }
-            // Check if right side contains positive/negative (blue)
-            if (block.rightWords.includes(words.positive[0]) || block.rightWords.includes(words.negative[0])) {
-                rightColor = 'blue';
+            if (!rightIsMixed) {
+                if (rightHasTraditional || rightHasIndustrial) {
+                    rightColor = 'green';
+                } else if (rightHasPositive || rightHasNegative) {
+                    rightColor = 'blue';
+                }
             }
             
-            // Create formatted labels
+            // Create formatted labels with proper colors for mixed blocks
             const leftParts = block.leftCategory.split('\n');
             const rightParts = block.rightCategory.split('\n');
+            
+            // Determine colors for main and sub parts
+            let leftMainColor = leftColor;
+            let leftSubColor = leftColor;
+            let rightMainColor = rightColor;
+            let rightSubColor = rightColor;
+            
+            // For mixed blocks, main gets one color and sub gets another
+            if (leftIsMixed) {
+                // Main (top) = traditional/industrial = green
+                leftMainColor = (leftHasTraditional || leftHasIndustrial) ? 'green' : 'blue';
+                // Sub (bottom) = positive/negative = blue
+                leftSubColor = (leftHasPositive || leftHasNegative) ? 'blue' : 'green';
+            }
+            
+            if (rightIsMixed) {
+                // Main (top) = traditional/industrial = green
+                rightMainColor = (rightHasTraditional || rightHasIndustrial) ? 'green' : 'blue';
+                // Sub (bottom) = positive/negative = blue
+                rightSubColor = (rightHasPositive || rightHasNegative) ? 'blue' : 'green';
+            }
             
             let leftHTML = '';
             let rightHTML = '';
             
             if (leftParts.length === 3) {
-                leftHTML = `<span class="category-main ${leftColor}">${leftParts[0]}</span><span class="category-or">hoặc</span><span class="category-sub ${leftColor}">${leftParts[2]}</span>`;
+                leftHTML = `<span class="category-main ${leftMainColor}">${leftParts[0]}</span><span class="category-or">hoặc</span><span class="category-sub ${leftSubColor}">${leftParts[2]}</span>`;
             } else {
                 leftHTML = `<span class="category-main ${leftColor}">${leftParts[0]}</span>`;
             }
             
             if (rightParts.length === 3) {
-                rightHTML = `<span class="category-main ${rightColor}">${rightParts[0]}</span><span class="category-or">hoặc</span><span class="category-sub ${rightColor}">${rightParts[2]}</span>`;
+                rightHTML = `<span class="category-main ${rightMainColor}">${rightParts[0]}</span><span class="category-or">hoặc</span><span class="category-sub ${rightSubColor}">${rightParts[2]}</span>`;
             } else {
                 rightHTML = `<span class="category-main ${rightColor}">${rightParts[0]}</span>`;
             }
