@@ -409,11 +409,11 @@ function handleResponse(key) {
     // Greenwald (2003) D-score algorithm:
     // - Correct trials: use actual RT
     // - Error trials:   use correct RT + 600ms penalty
-    // - RT < 400ms:     replace with 400ms (too fast = floor)
-    // - RT > 10000ms:   replace with 10000ms (cap)
+    // - RT < 300ms:     replace with 300ms (too fast = floor)
+    // - RT > 3000ms:    replace with 3000ms (cap)
     const ERROR_PENALTY = 600;
-    const RT_MIN        = 400;
-    const RT_MAX        = 10000;
+    const RT_MIN        = 300;
+    const RT_MAX        = 3000;
 
     let finalRT = hadError ? rt + ERROR_PENALTY : rt;
     finalRT = Math.min(Math.max(finalRT, RT_MIN), RT_MAX);
@@ -461,7 +461,7 @@ function finishExperiment() {
     const participantOK = fastPct <= 0.10;
 
     // Step 2: Use all critical trials (errors already have +600ms penalty,
-    //         RT already clamped 400–10000ms in handleResponse)
+    //         RT already clamped 300–3000ms in handleResponse)
     const block4 = results.filter(r => r.block === 4);
     const block7 = results.filter(r => r.block === 7);
 
