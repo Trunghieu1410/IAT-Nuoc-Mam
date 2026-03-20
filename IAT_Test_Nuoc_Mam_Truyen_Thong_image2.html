@@ -17,8 +17,8 @@
         #instructions .word-list { background: #f5f5f5; padding: 30px; border-radius: 10px; margin: 30px 0; text-align: left; }
         #instructions .word-category { margin-bottom: 20px; }
         #instructions .word-category h3 { color: #8B0000; margin-bottom: 10px; }
-        .img-preview-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-        .img-preview-grid img { width: 80px; height: 60px; object-fit: cover; border-radius: 4px; border: 2px solid #ccc; }
+        .img-preview-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .img-preview-grid img { width: 240px; height: 180px; object-fit: cover; border-radius: 6px; border: 2px solid #ccc; }
         #instructions .warning { color: red; font-weight: 600; margin-top: 30px; }
         #trial-screen { width: 100%; height: 100%; position: relative; }
         .category-labels { position: absolute; top: 50px; width: 100%; display: flex; justify-content: space-between; padding: 0 100px; }
@@ -35,7 +35,14 @@
         #stimulus { position: absolute; top: calc(40% + 30px); left: 50%; transform: translate(-50%, -50%); text-align: center; display: flex; justify-content: center; align-items: center; }
         #stimulus.text-stimulus { font-size: 80px; font-weight: 700; color: black; }
         #stimulus.text-stimulus.positive, #stimulus.text-stimulus.negative { color: #0052CC; }
-        #stimulus img.stimulus-img { max-width: 320px; max-height: 280px; object-fit: contain; border-radius: 8px; border: 3px solid #228B22; background: white; }
+        #stimulus img.stimulus-img { 
+            width: 380px; 
+            height: 320px; 
+            object-fit: cover; 
+            border-radius: 8px; 
+            border: 3px solid #228B22; 
+            background: white; 
+        }
         #feedback { position: absolute; top: 50%; left: 50%; transform: translateX(-50%); font-size: 100px; color: red; font-weight: 900; }
         .instruction-text { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); font-size: 18px; text-align: center; color: #333; max-width: 600px; }
         #end-screen { text-align: center; }
@@ -102,10 +109,10 @@
             <p>Cảm ơn bạn đã tham gia.</p>
             <p style="font-size:18px;color:#333;margin:20px 0;font-weight:bold;">Hãy điền những kết quả này vào form</p>
             <p id="d-score-display"></p>
-            <p style="font-size:18px;color:#333;margin:30px 0 20px 0;font-weight:bold;">Hãy tải file dữ liệu xuống</p>
-            <button class="btn" onclick="downloadExcel()" style="margin:0 auto 20px auto;">Tải xuống dữ liệu (Excel)</button>
+            <p style="font-size:16px;color:#2e7d32;margin:30px 0 10px 0;font-weight:bold;">✅ Dữ liệu đã được tải xuống tự động</p>
+            <button class="btn" onclick="downloadExcel()" style="margin:0 auto 20px auto;background:#666;">Tải lại file dữ liệu</button>
             <button class="btn" onclick="location.reload()" style="margin:0 auto 30px auto;background:#555;">Làm bài test mới</button>
-            <p style="font-size:14px;color:#666;">Bạn có thể đóng tab này sau khi tải xong.</p>
+            <p style="font-size:14px;color:#666;">Bạn có thể đóng tab này.</p>
         </div>
         <div id="cancelled-screen" class="hidden">
             <h1>Bài test đã bị hủy</h1>
@@ -253,8 +260,8 @@ const instructions = [
         </div>
         <p class="warning">⚠️ Nhấn ESC bất kỳ lúc nào để HUỶ (kết quả KHÔNG lưu)</p>
     `},
-    { title:"Danh sách kích thích", content:`
-        <h1>Danh sách kích thích</h1>
+    { title:"Danh sách hình/từ theo chủ đề", content:`
+        <h1>Danh sách hình/từ theo chủ đề</h1>
         <div class="word-list">
             <div class="word-category">
                 <h3>TRUYỀN THỐNG (hình ảnh):</h3>
@@ -511,6 +518,9 @@ function finishExperiment() {
         results: results
     };
     localStorage.setItem('IAT_' + participantInfo.loginCode, JSON.stringify(dataToSave));
+    
+    // Auto-download Excel file
+    downloadExcel();
     
     document.removeEventListener('keydown', handleKeyPress);
 }
