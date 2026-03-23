@@ -485,18 +485,13 @@ function finishExperiment() {
     let interpretation = '';
     if (!participantOK) {
         interpretation = '<span style="color:red">⚠️ Dữ liệu không hợp lệ (>10% phản hồi quá nhanh < 300ms)</span>';
-    } else if (dScore > 0.65)       interpretation = 'Liên kết mạnh: Truyền thống → Tích cực';
-    else if (dScore > 0.35)         interpretation = 'Liên kết trung bình: Truyền thống → Tích cực';
-    else if (dScore > 0.15)         interpretation = 'Liên kết yếu: Truyền thống → Tích cực';
-    else if (dScore >= -0.15)       interpretation = 'Không có liên kết rõ ràng';
-    else if (dScore >= -0.35)       interpretation = 'Liên kết yếu: Công nghiệp → Tích cực';
-    else if (dScore >= -0.65)       interpretation = 'Liên kết trung bình: Công nghiệp → Tích cực';
-    else                            interpretation = 'Liên kết mạnh: Công nghiệp → Tích cực';
+    }
+    // Bỏ tất cả interpretation về D-Score, chỉ giữ warning về fast trials
 
     document.getElementById('end-screen').classList.remove('hidden');
     document.getElementById('d-score-display').innerHTML = `
         <strong>D-Score: ${dScore.toFixed(3)}</strong><br>
-        <span style="font-size:18px;color:#555;">${interpretation}</span><br><br>
+        ${interpretation ? `<span style="font-size:18px;">${interpretation}</span><br><br>` : '<br>'}
         <span style="font-size:22px;">Block 4 RT: ${block4RT.toFixed(2)}ms</span><br>
         <span style="font-size:22px;">Block 7 RT: ${block7RT.toFixed(2)}ms</span><br><br>
         <span style="font-size:14px;color:#888;">
