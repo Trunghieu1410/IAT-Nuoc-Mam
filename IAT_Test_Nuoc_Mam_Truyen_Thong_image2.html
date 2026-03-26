@@ -124,6 +124,7 @@
 <script>
 const participantInfo = {};
 const results = [];
+const summaryStats = {}; // Store D-Score, Block RTs, etc.
 let currentBlock = 0, currentTrial = 0, trialStartTime = 0;
 let experimentCancelled = false, firstAttemptRT = 0, lastWord = null;
 let recentResponses = [];
@@ -481,6 +482,14 @@ function finishExperiment() {
     // Step 4: D = (M_block7 - M_block4) / pooled_SD
     const dScore = (block7RT - block4RT) / pooledSD;
 
+    // Save summary stats to global object for Excel export
+    summaryStats.dScore = dScore;
+    summaryStats.block4RT = block4RT;
+    summaryStats.block7RT = block7RT;
+    summaryStats.pooledSD = pooledSD;
+    summaryStats.fastPct = fastPct * 100;
+    summaryStats.participantOK = participantOK;
+
     // Step 5: Interpretation
     let interpretation = '';
     if (!participantOK) {
@@ -530,29 +539,79 @@ function cancelExperiment() {
 }
 
 function downloadExcel() {
-    const headers = ['Participant ID','Test Date','Block','Block Type','Trial','Stimulus','Correct Side','RT (ms)','Raw RT (ms)','Had Error','Excluded'];
+    // ═══════════════════════════════════════════════════════════
+    // SHEET 1: Trial-by-Trial Data with Summary Stats
+    // ═══════════════════════════════════════════════════════════
+    const headers = [
+        'Participant ID', 'Block', 'Trial', 'Stimulus', 'Correct Side', 
+        'RT (ms)', 'Raw RT (ms)', 'Had Error', 'Excluded',
+        'D score', 'Block 4 RT', 'Block 7 RT'
+    ];
+    
+    // Add D-Score, Block 4 RT, Block 7 RT to every row
+    const dScoreStr = summaryStats.dScore ? summaryStats.dScore.toFixed(3) : '';
+    const block4RTStr = summaryStats.block4RT ? summaryStats.block4RT.toFixed(2) : '';
+    const block7RTStr = summaryStats.block7RT ? summaryStats.block7RT.toFixed(2) : '';
+    
     const rows = results.map(r => [
-        r.participantID, r.testDate, r.block, r.blockType,
-        r.trial, r.stimulus, r.correctSide, r.rt,
-        r.rawRT, r.hadError ? 'Yes' : 'No', r.excluded ? 'Yes' : 'No'
+        r.participantID,
+        r.block,
+        r.trial,
+        r.stimulus,
+        r.correctSide,
+        r.rt,
+        r.rawRT,
+        r.hadError ? 'Yes' : 'No',
+        r.excluded ? 'Yes' : 'No',
+        dScoreStr,      // D score - same on every row
+        block4RTStr,    // Block 4 RT - same on every row
+        block7RTStr     // Block 7 RT - same on every row
     ]);
 
-    // Build worksheet
     const wsData = [headers, ...rows];
     const ws = XLSX.utils.aoa_to_sheet(wsData);
 
     // Column widths
     ws['!cols'] = [
-        {wch:18}, {wch:26}, {wch:8}, {wch:12},
-        {wch:8},  {wch:16}, {wch:14},{wch:10}, {wch:12}, {wch:12}, {wch:10}
+        {wch:18}, {wch:8}, {wch:8}, {wch:16}, {wch:14},
+        {wch:10}, {wch:12}, {wch:12}, {wch:10},
+        {wch:10}, {wch:12}, {wch:12}
     ];
 
-    // Create workbook
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'IAT Results');
+    // ═══════════════════════════════════════════════════════════
+    // SHEET 2: Summary Statistics (keep for reference)
+    // ═══════════════════════════════════════════════════════════
+    const summaryData = [
+        ['IAT Summary Statistics', ''],
+        ['', ''],
+        ['Participant ID', participantInfo.loginCode],
+        ['', ''],
+        ['D-Score', dScoreStr],
+        ['Block 4 Mean RT (ms)', block4RTStr],
+        ['Block 7 Mean RT (ms)', block7RTStr],
+        ['Pooled SD (ms)', summaryStats.pooledSD ? summaryStats.pooledSD.toFixed(2) : 'N/A'],
+        ['Fast Trials (%)', summaryStats.fastPct ? summaryStats.fastPct.toFixed(1) : 'N/A'],
+        ['Data Valid', summaryStats.participantOK ? 'Yes' : 'No'],
+        ['', ''],
+        ['Note:', 'D-Score calculated using Greenwald et al. (2003) algorithm'],
+        ['', 'Fast trials = trials with RT < 300ms'],
+        ['', 'Data is invalid if >10% trials are fast trials']
+    ];
 
-    // Download
-    const filename = `${participantInfo.loginCode}_Results_IAT.xlsx`;
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+    wsSummary['!cols'] = [{wch:25}, {wch:20}];
+
+    // ═══════════════════════════════════════════════════════════
+    // Create Workbook with Both Sheets
+    // ═══════════════════════════════════════════════════════════
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Trial Data');
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+    // ═══════════════════════════════════════════════════════════
+    // Filename: {ID}_{D-Score}_{Block4RT}_{Block7RT}.xlsx
+    // ═══════════════════════════════════════════════════════════
+    const filename = `${participantInfo.loginCode}_${dScoreStr}_${block4RTStr}_${block7RTStr}.xlsx`;
     XLSX.writeFile(wb, filename);
 }
 
@@ -565,15 +624,65 @@ function hasConsecutiveSameKey(r,k,max=4) {
 }
 
 function fixConsecutiveDuplicates(list) {
-    let fixed=true;
-    while(fixed){ fixed=false;
-        for(let i=0;i<list.length-1;i++){
-            if(list[i]===list[i+1]){
-                for(let j=i+2;j<list.length;j++){ if(list[j]!==list[i]){[list[i+1],list[j]]=[list[j],list[i+1]];fixed=true;break;} }
-                if(!fixed&&i+2<list.length){[list[i+1],list[list.length-1]]=[list[list.length-1],list[i+1]];fixed=true;}
+    // Improved algorithm to prevent consecutive identical stimuli
+    // Uses Fisher-Yates shuffle with consecutive check
+    let maxAttempts = 100;
+    let attempt = 0;
+    
+    while (attempt < maxAttempts) {
+        let hasConsecutive = false;
+        
+        // Check for consecutive duplicates
+        for (let i = 0; i < list.length - 1; i++) {
+            if (list[i] === list[i + 1]) {
+                hasConsecutive = true;
+                
+                // Try to swap with a non-consecutive element
+                let swapped = false;
+                for (let j = i + 2; j < list.length; j++) {
+                    // Check if we can swap without creating new consecutive duplicates
+                    const wouldCreateNewDup = (j < list.length - 1 && list[i] === list[j + 1]) ||
+                                              (i > 0 && list[j] === list[i - 1]) ||
+                                              (j > 0 && list[i] === list[j - 1]);
+                    
+                    if (list[j] !== list[i] && !wouldCreateNewDup) {
+                        [list[i + 1], list[j]] = [list[j], list[i + 1]];
+                        swapped = true;
+                        break;
+                    }
+                }
+                
+                // If no safe swap found, try swapping with earlier elements
+                if (!swapped && i > 0) {
+                    for (let j = 0; j < i - 1; j++) {
+                        const wouldCreateNewDup = (j < list.length - 1 && list[i + 1] === list[j + 1]) ||
+                                                  (j > 0 && list[i + 1] === list[j - 1]);
+                        
+                        if (list[j] !== list[i + 1] && list[j] !== list[i] && !wouldCreateNewDup) {
+                            [list[i + 1], list[j]] = [list[j], list[i + 1]];
+                            swapped = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (swapped) break; // Restart check from beginning
             }
         }
+        
+        if (!hasConsecutive) break; // Success! No consecutive duplicates
+        attempt++;
     }
+    
+    // Final verification - if still has consecutive after max attempts, log warning
+    let finalCheck = false;
+    for (let i = 0; i < list.length - 1; i++) {
+        if (list[i] === list[i + 1]) {
+            finalCheck = true;
+            console.warn(`Warning: Could not eliminate all consecutive duplicates at position ${i}`);
+        }
+    }
+    
     return list;
 }
 
