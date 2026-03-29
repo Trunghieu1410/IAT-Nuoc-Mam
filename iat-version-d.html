@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IAT Test - Version D (CN trái, Tiêu cực trái)</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; background: white; color: black; overflow: hidden; }
+#app { width: 66.67vw; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; margin: 0 auto; background: #f9f9f9; border-left: 1px solid #ddd; border-right: 1px solid #ddd; }
+#instructions { max-width: 900px; width: 90%; text-align: center; padding: 40px; overflow-y: auto; max-height: 100vh; }
+.btn { width: 100%; max-width: 400px; padding: 15px; background: #8B0000; color: white; border: none; border-radius: 5px; font-size: 18px; font-weight: 600; cursor: pointer; transition: background 0.3s; }
+.btn:hover { background: #A52A2A; }
+#instructions h1 { color: #8B0000; margin-bottom: 30px; font-size: 36px; }
+#instructions p { font-size: 20px; line-height: 1.8; margin-bottom: 20px; text-align: left; }
+#instructions ul { text-align: left; font-size: 20px; line-height: 1.8; margin: 20px 0; margin-left: 40px; }
+#instructions .word-list { background: #f5f5f5; padding: 30px; border-radius: 10px; margin: 30px 0; text-align: left; }
+#instructions .word-category { margin-bottom: 20px; }
+#instructions .word-category h3 { color: #8B0000; margin-bottom: 10px; }
+.img-preview-grid { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; }
+.img-preview-grid img { width: 320px; height: 240px; object-fit: cover; border-radius: 8px; border: 3px solid #ccc; }
+#instructions .warning { color: red; font-weight: 600; margin-top: 30px; }
+#trial-screen { width: 100%; height: 100%; position: relative; }
+.category-labels { position: absolute; top: 50px; width: 100%; display: flex; justify-content: space-between; padding: 0 100px; }
+.category-label { font-size: 28px; font-weight: 700; background: transparent; padding: 20px 40px; border-radius: 10px; border: none; }
+.category-left { text-align: left; }
+.category-right { text-align: right; }
+.category-label .category-main { display: block; font-size: 32px; margin-bottom: 10px; }
+.category-label .category-main.green { color: #228B22; }
+.category-label .category-main.blue { color: #0052CC; }
+.category-label .category-or { display: block; font-size: 32px; color: black; margin: 8px 0; }
+.category-label .category-sub { display: block; font-size: 32px; }
+.category-label .category-sub.green { color: #228B22; }
+.category-label .category-sub.blue { color: #0052CC; }
+#stimulus { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; display: flex; justify-content: center; align-items: center; }
+#stimulus.text-stimulus { font-size: 80px; font-weight: 700; color: black; }
+#stimulus.text-stimulus.positive, #stimulus.text-stimulus.negative { color: #0052CC; }
+#stimulus img.stimulus-img { width: 380px; height: 320px; object-fit: cover; border-radius: 8px; border: 3px solid #228B22; background: white; }
+#feedback { position: absolute; top: 50%; left: 50%; transform: translateX(-50%); font-size: 100px; color: red; font-weight: 900; }
+.instruction-text { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); font-size: 18px; text-align: center; color: #333; max-width: 600px; }
+#end-screen { text-align: center; }
+#end-screen h1 { font-size: 48px; color: #8B0000; margin-bottom: 30px; }
+#end-screen p { font-size: 24px; line-height: 1.6; }
+#cancelled-screen { text-align: center; }
+#cancelled-screen h1 { font-size: 48px; color: red; margin-bottom: 30px; }
+#cancelled-screen p { font-size: 24px; line-height: 1.6; }
+.hidden { display: none !important; }
+.key-hints { position: absolute; bottom: 50px; width: 100%; display: flex; justify-content: space-between; padding: 0 100px; font-size: 24px; color: #666; }
+#id-screen { text-align: center; padding: 40px; max-width: 600px; width: 90%; }
+#id-screen h1 { color: #8B0000; font-size: 36px; margin-bottom: 16px; }
+#id-screen p { font-size: 18px; color: #555; margin-bottom: 30px; line-height: 1.6; }
+#id-input { width: 100%; max-width: 380px; padding: 16px 20px; font-size: 24px; font-weight: 700; text-align: center; border: 2px solid #ccc; border-radius: 8px; outline: none; margin-bottom: 24px; display: block; margin-left: auto; margin-right: auto; transition: border-color 0.2s; }
+#id-input:focus { border-color: #8B0000; }
+#id-error { color: red; font-size: 16px; margin-bottom: 16px; min-height: 22px; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+<div id="app">
+    <div id="id-screen">
+        <h1>Nhập mã số tham gia</h1>
+        <p>Vui lòng nhập <strong>ID</strong> được cung cấp bởi người nghiên cứu<br>trước khi bắt đầu bài test.</p>
+        <p style="font-size:14px;color:#666;margin-bottom:20px;">💡 Nếu bạn đã làm test trước đó, nhập lại ID cũ để xem kết quả</p>
+        <input type="text" id="id-input" placeholder="Nhập ID của bạn..." autocomplete="off" spellcheck="false">
+        <div id="id-error"></div>
+        <button class="btn" onclick="submitID()">Tiếp tục →</button>
+    </div>
+    <div id="instructions" class="hidden">
+        <div id="instruction-content"></div>
+        <button class="btn" onclick="nextInstruction()">SPACE - Tiếp tục</button>
+    </div>
+    <div id="trial-screen" class="hidden">
+        <div class="category-labels">
+            <div class="category-label category-left" id="left-label"></div>
+            <div class="category-label category-right" id="right-label"></div>
+        </div>
+        <div id="stimulus"></div>
+        <div id="feedback" class="hidden"></div>
+        <div class="instruction-text">Nếu sai, dấu X đỏ xuất hiện → bấm phím đúng để sửa</div>
+        <div class="key-hints">
+            <div>← Phím E</div>
+            <div>Phím I →</div>
+        </div>
+    </div>
+    <div id="end-screen" class="hidden">
+        <h1>Hoàn thành!</h1>
+        <p>Cảm ơn bạn đã tham gia.</p>
+        <p style="font-size:18px;color:#333;margin:20px 0;font-weight:bold;">Hãy điền những kết quả này vào form</p>
+        <p id="d-score-display"></p>
+        <p style="font-size:16px;color:#2e7d32;margin:30px 0 10px 0;font-weight:bold;">✅ Dữ liệu đã được tải xuống tự động</p>
+        <button class="btn" onclick="downloadExcel()" style="margin:0 auto 20px auto;background:#666;">Tải lại file dữ liệu</button>
+        <button class="btn" onclick="location.reload()" style="margin:0 auto 30px auto;background:#555;">Làm bài test mới</button>
+        <p style="font-size:14px;color:#666;">Bạn có thể đóng tab này.</p>
+    </div>
+    <div id="cancelled-screen" class="hidden">
+        <h1>Bài test đã bị hủy</h1>
+        <p>Kết quả sẽ KHÔNG được lưu.</p>
+        <p style="margin-top:20px;font-size:18px;">Bạn có thể đóng tab này hoặc làm lại.</p>
+        <button class="btn" onclick="location.reload()" style="margin:30px auto;">Làm lại</button>
+    </div>
+</div>
+
+<script>
+const VERSION = "D"; // CN trái, Tiêu cực trái
+const participantInfo = {};
+const results = [];
+const summaryStats = {};
+let currentBlock = 0, currentTrial = 0, trialStartTime = 0;
+let experimentCancelled = false, firstAttemptRT = 0, lastWord = null;
+let recentResponses = [];
+let hadError = false;
+
+participantInfo.name = 'Anonymous';
+participantInfo.age = 'N/A';
+participantInfo.gender = 'N/A';
+participantInfo.region = 'N/A';
+participantInfo.usage = 'N/A';
+participantInfo.testDate = new Date().toISOString();
+
+function isImage(s) {
+    return s.startsWith('data:image') || /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(s);
+}
+
+function getStimulusLabel(s) {
+    if (isImage(s)) {
+        for (const [cat, arr] of Object.entries(words)) {
+            const idx = arr.indexOf(s);
+            if (idx !== -1) return cat.substring(0,2) + '_' + (idx+1);
+        }
+        return 'img';
+    }
+    return s;
+}
+
+const words = {
+    traditional: ["tt_1.jpg","tt_2.jpg","tt_3.jpg","tt_4.jpg","tt_5.jpg","tt_6.jpg"],
+    industrial: ["cn_1.jpg","cn_2.jpg","cn_3.jpg","cn_4.jpg","cn_5.jpg","cn_6.jpg"],
+    positive: ["may mắn","yêu thương","vui vẻ","hạnh phúc","phấn khởi","lạc quan"],
+    negative: ["bệnh dịch","chết chóc","tai nạn","buồn bã","chiến tranh","bi kịch"]
+};
+
+function imgPreviews(arr) {
+    return arr.map(src => `<img src="${src}" style="width:80px;height:60px;object-fit:cover;border-radius:4px;border:2px solid #ccc;">`).join('');
+}
+
+// VERSION D: CN trái (block 1), Tiêu cực trái (block 2)
+// Block 3-4 (critical): CN+Tiêu cực (trái) vs TT+Tích cực (phải)
+// Block 5: TT trái (reversed)
+// Block 6-7 (critical): TT+Tiêu cực (trái) vs CN+Tích cực (phải)
+const blocks = [
+    { name:"Phần 1", trials:20, leftCategory:"CÔNG NGHIỆP", rightCategory:"TRUYỀN THỐNG", leftWords:words.industrial, rightWords:words.traditional, isPractice:true },
+    { name:"Phần 2", trials:20, leftCategory:"TIÊU CỰC", rightCategory:"TÍCH CỰC", leftWords:words.negative, rightWords:words.positive, isPractice:true },
+    { name:"Phần 3", trials:20, leftCategory:"CÔNG NGHIỆP\nhoặc\nTIÊU CỰC", rightCategory:"TRUYỀN THỐNG\nhoặc\nTÍCH CỰC", leftWords:[...words.industrial,...words.negative], rightWords:[...words.traditional,...words.positive], isPractice:true },
+    { name:"Phần 4", trials:40, leftCategory:"CÔNG NGHIỆP\nhoặc\nTIÊU CỰC", rightCategory:"TRUYỀN THỐNG\nhoặc\nTÍCH CỰC", leftWords:[...words.industrial,...words.negative], rightWords:[...words.traditional,...words.positive], isPractice:false },
+    { name:"Phần 5", trials:30, leftCategory:"TRUYỀN THỐNG", rightCategory:"CÔNG NGHIỆP", leftWords:words.traditional, rightWords:words.industrial, isPractice:true },
+    { name:"Phần 6", trials:20, leftCategory:"TRUYỀN THỐNG\nhoặc\nTIÊU CỰC", rightCategory:"CÔNG NGHIỆP\nhoặc\nTÍCH CỰC", leftWords:[...words.traditional,...words.negative], rightWords:[...words.industrial,...words.positive], isPractice:true },
+    { name:"Phần 7", trials:40, leftCategory:"TRUYỀN THỐNG\nhoặc\nTIÊU CỰC", rightCategory:"CÔNG NGHIỆP\nhoặc\nTÍCH CỰC", leftWords:[...words.traditional,...words.negative], rightWords:[...words.industrial,...words.positive], isPractice:false }
+];
+
+const instructions = [
+    { title:"Chào mừng", content:`
+        <h1>Chào mừng bạn đến với bài test IAT!</h1>
+        <p style="text-align:center;color:#666;font-size:16px;">Phiên bản D</p>
+        <p>Bài test này đo lường các liên kết tự động trong suy nghĩ của bạn về Nước mắm.</p>
+        <ul>
+            <li>Bạn sẽ thấy hình ảnh hoặc từ xuất hiện ở giữa màn hình</li>
+            <li>Nhiệm vụ: phân loại chúng nhanh nhất có thể</li>
+            <li>Nếu sai, dấu X đỏ sẽ xuất hiện → bấm phím đúng để sửa</li>
+        </ul>
+        <div style="text-align:center;margin:40px 0;">
+            <p style="font-size:24px;margin-bottom:20px;"><strong>E</strong> = Chủ đề bên trái</p>
+            <p style="font-size:24px;"><strong>I</strong> = Chủ đề bên phải</p>
+        </div>
+        <p class="warning">⚠️ Nhấn ESC bất kỳ lúc nào để HUỶ (kết quả KHÔNG lưu)</p>
+    `},
+    { title:"Danh sách hình/từ theo chủ đề", content:`
+        <h1>Danh sách hình/từ theo chủ đề</h1>
+        <div class="word-list">
+            <div class="word-category">
+                <h3>TRUYỀN THỐNG (hình ảnh):</h3>
+                <div class="img-preview-grid">${imgPreviews(words.traditional)}</div>
+            </div>
+            <div class="word-category">
+                <h3>CÔNG NGHIỆP (hình ảnh):</h3>
+                <div class="img-preview-grid">${imgPreviews(words.industrial)}</div>
+            </div>
+            <div class="word-category">
+                <h3>TÍCH CỰC:</h3>
+                <p>may mắn, yêu thương, vui vẻ, hạnh phúc, phấn khởi, lạc quan</p>
+            </div>
+            <div class="word-category">
+                <h3>TIÊU CỰC:</h3>
+                <p>bệnh dịch, chết chóc, tai nạn, buồn bã, chiến tranh, bi kịch</p>
+            </div>
+        </div>
+        <p>Hãy xem kỹ các hình ảnh và từ này. Nhấn SPACE khi sẵn sàng.</p>
+    `}
+];
+
+let currentInstructionIndex = 0;
+
+window.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('id-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') submitID();
+    });
+    document.addEventListener('keydown', handleKeyPress);
+});
+
+function loadPreviousResults(savedData) {
+    participantInfo.loginCode = savedData.participantID;
+    participantInfo.testDate = savedData.testDate;
+    results.length = 0;
+    results.push(...savedData.results);
+    document.getElementById('id-screen').classList.add('hidden');
+    document.getElementById('end-screen').classList.remove('hidden');
+    document.getElementById('d-score-display').innerHTML = `
+        <div style="background:#fffacd;padding:20px;border-radius:8px;margin-bottom:20px;">
+            <strong style="color:#b8860b;">📂 KẾT QUẢ ĐÃ LƯU (Version ${VERSION})</strong><br>
+            <span style="font-size:14px;color:#666;">Ngày test: ${new Date(savedData.testDate).toLocaleString('vi-VN')}</span>
+        </div>
+        <strong>D-Score: ${savedData.dScore.toFixed(3)}</strong><br>
+        <span style="font-size:18px;color:#555;">${savedData.interpretation}</span><br><br>
+        <span style="font-size:22px;">Block 4 RT: ${savedData.block4RT.toFixed(2)}ms</span><br>
+        <span style="font-size:22px;">Block 7 RT: ${savedData.block7RT.toFixed(2)}ms</span><br><br>
+        <span style="font-size:14px;color:#888;">
+            Pooled SD: ${savedData.pooledSD.toFixed(1)}ms &nbsp;|&nbsp;
+            Fast trials: ${savedData.fastPct.toFixed(1)}% ${savedData.participantOK ? '✅' : '❌'}
+        </span>`;
+}
+
+function submitID() {
+    const input = document.getElementById('id-input').value.trim();
+    const errorEl = document.getElementById('id-error');
+    if (!input) {
+        errorEl.textContent = '⚠️ Vui lòng nhập ID trước khi tiếp tục.';
+        document.getElementById('id-input').focus();
+        return;
+    }
+    errorEl.textContent = '';
+    const savedData = localStorage.getItem('IAT_' + VERSION + '_' + input);
+    if (savedData) {
+        try { loadPreviousResults(JSON.parse(savedData)); return; } catch (e) { console.error(e); }
+    }
+    participantInfo.loginCode = input;
+    participantInfo.testDate = new Date().toISOString();
+    document.getElementById('id-screen').classList.add('hidden');
+    document.getElementById('instructions').classList.remove('hidden');
+    showInstruction();
+}
+
+function showInstruction() {
+    document.getElementById('instruction-content').innerHTML = instructions[currentInstructionIndex].content;
+    document.getElementById('instructions').classList.remove('hidden');
+}
+
+function nextInstruction() {
+    currentInstructionIndex++;
+    if (currentInstructionIndex < instructions.length) showInstruction();
+    else { document.getElementById('instructions').classList.add('hidden'); showBlockInstruction(0); }
+}
+
+function showBlockInstruction(blockIndex) {
+    const block = blocks[blockIndex];
+    document.getElementById('instruction-content').innerHTML = `<h1>${block.name}</h1>
+        <p style="font-size:24px;margin:30px 0;">
+            Bên TRÁI (phím E): <strong>${block.leftCategory.replace(/\n/g,' + ')}</strong><br><br>
+            Bên PHẢI (phím I): <strong>${block.rightCategory.replace(/\n/g,' + ')}</strong>
+        </p><p>Nhấn SPACE để bắt đầu.</p>`;
+    document.getElementById('instructions').classList.remove('hidden');
+}
+
+function startBlock() {
+    document.getElementById('instructions').classList.add('hidden');
+    document.getElementById('trial-screen').classList.remove('hidden');
+    const block = blocks[currentBlock];
+    recentResponses = [];
+    let leftHasTraditional = block.leftWords.some(w => words.traditional.includes(w));
+    let leftHasIndustrial = block.leftWords.some(w => words.industrial.includes(w));
+    let leftHasPositive = block.leftWords.some(w => words.positive.includes(w));
+    let leftHasNegative = block.leftWords.some(w => words.negative.includes(w));
+    let rightHasTraditional = block.rightWords.some(w => words.traditional.includes(w));
+    let rightHasIndustrial = block.rightWords.some(w => words.industrial.includes(w));
+    let rightHasPositive = block.rightWords.some(w => words.positive.includes(w));
+    let rightHasNegative = block.rightWords.some(w => words.negative.includes(w));
+    let leftIsMixed = (leftHasTraditional||leftHasIndustrial)&&(leftHasPositive||leftHasNegative);
+    let rightIsMixed = (rightHasTraditional||rightHasIndustrial)&&(rightHasPositive||rightHasNegative);
+    let leftColor = !leftIsMixed ? ((leftHasTraditional||leftHasIndustrial)?'green':'blue') : 'blue';
+    let rightColor = !rightIsMixed ? ((rightHasTraditional||rightHasIndustrial)?'green':'blue') : 'blue';
+    let leftMainColor=leftColor, leftSubColor=leftColor, rightMainColor=rightColor, rightSubColor=rightColor;
+    if (leftIsMixed) { leftMainColor=(leftHasTraditional||leftHasIndustrial)?'green':'blue'; leftSubColor=(leftHasPositive||leftHasNegative)?'blue':'green'; }
+    if (rightIsMixed) { rightMainColor=(rightHasTraditional||rightHasIndustrial)?'green':'blue'; rightSubColor=(rightHasPositive||rightHasNegative)?'blue':'green'; }
+    const leftParts = block.leftCategory.split('\n');
+    const rightParts = block.rightCategory.split('\n');
+    const leftHTML = leftParts.length===3 ? `<span class="category-main ${leftMainColor}">${leftParts[0]}</span><span class="category-or">hoặc</span><span class="category-sub ${leftSubColor}">${leftParts[2]}</span>` : `<span class="category-main ${leftColor}">${leftParts[0]}</span>`;
+    const rightHTML = rightParts.length===3 ? `<span class="category-main ${rightMainColor}">${rightParts[0]}</span><span class="category-or">hoặc</span><span class="category-sub ${rightSubColor}">${rightParts[2]}</span>` : `<span class="category-main ${rightColor}">${rightParts[0]}</span>`;
+    document.getElementById('left-label').innerHTML = leftHTML;
+    document.getElementById('right-label').innerHTML = rightHTML;
+    const allWords = [...block.leftWords,...block.rightWords];
+    const trialList = [];
+    while (trialList.length < block.trials) trialList.push(...allWords);
+    shuffleArray(trialList);
+    fixConsecutiveDuplicates(trialList);
+    block.trialList = trialList.slice(0, block.trials);
+    block.trialIndex = 0;
+    lastWord = null;
+    currentTrial = 0;
+    showTrial();
+}
+
+function showTrial() {
+    const block = blocks[currentBlock];
+    const stimulus = block.trialList[currentTrial];
+    const el = document.getElementById('stimulus');
+    el.innerHTML = ''; el.className = '';
+    if (isImage(stimulus)) {
+        el.classList.add('image-stimulus');
+        const img = document.createElement('img');
+        img.src = stimulus; img.alt = getStimulusLabel(stimulus); img.classList.add('stimulus-img');
+        el.appendChild(img);
+    } else {
+        el.classList.add('text-stimulus'); el.textContent = stimulus;
+        if (words.positive.includes(stimulus)) el.classList.add('positive');
+        else if (words.negative.includes(stimulus)) el.classList.add('negative');
+    }
+    lastWord = stimulus;
+    document.getElementById('feedback').classList.add('hidden');
+    trialStartTime = performance.now();
+}
+
+function handleKeyPress(e) {
+    if (e.key==='Escape') { cancelExperiment(); return; }
+    if (!document.getElementById('instructions').classList.contains('hidden')) {
+        if (e.key===' ') { e.preventDefault(); currentInstructionIndex < instructions.length ? nextInstruction() : startBlock(); }
+        return;
+    }
+    if (!document.getElementById('trial-screen').classList.contains('hidden')) {
+        if (e.key==='e'||e.key==='E'||e.key==='i'||e.key==='I') { e.preventDefault(); handleResponse(e.key.toLowerCase()); }
+    }
+}
+
+function handleResponse(key) {
+    const block = blocks[currentBlock];
+    const stimulus = block.trialList[currentTrial];
+    const rt = performance.now() - trialStartTime;
+    const correctKey = block.leftWords.includes(stimulus) ? 'e' : 'i';
+    if (key !== correctKey) {
+        hadError = true;
+        document.getElementById('feedback').textContent = 'X';
+        document.getElementById('feedback').classList.remove('hidden');
+        return;
+    }
+    let finalRT = hadError ? rt + 600 : rt;
+    finalRT = Math.min(Math.max(finalRT, 300), 3000);
+    recentResponses.push(correctKey);
+    if (recentResponses.length > 10) recentResponses.shift();
+    results.push({
+        participantID: participantInfo.loginCode, testDate: participantInfo.testDate,
+        version: VERSION, block: currentBlock+1, blockType: block.isPractice ? 'Practice' : 'Critical',
+        trial: currentTrial+1, stimulus: getStimulusLabel(stimulus),
+        correctSide: correctKey==='e' ? 'left' : 'right',
+        rt: Math.round(finalRT), rawRT: Math.round(rt), hadError: hadError, excluded: false
+    });
+    hadError = false;
+    currentTrial++;
+    if (currentTrial < block.trials) {
+        const nextStimulus = block.trialList[currentTrial];
+        const nextCorrectKey = block.leftWords.includes(nextStimulus) ? 'e' : 'i';
+        if (hasConsecutiveSameKey(recentResponses, nextCorrectKey, 4)) {
+            const rem = block.trialList.slice(currentTrial); shuffleArray(rem);
+            block.trialList.splice(currentTrial, rem.length, ...rem);
+        }
+        setTimeout(showTrial, 300);
+    } else {
+        document.getElementById('trial-screen').classList.add('hidden');
+        currentBlock++;
+        currentBlock < blocks.length ? showBlockInstruction(currentBlock) : finishExperiment();
+    }
+}
+
+function finishExperiment() {
+    const criticalAll = results.filter(r => r.block === 4 || r.block === 7);
+    const fastTrials = criticalAll.filter(r => r.rawRT < 300).length;
+    const fastPct = fastTrials / criticalAll.length;
+    const participantOK = fastPct <= 0.10;
+    const block4 = results.filter(r => r.block === 4);
+    const block7 = results.filter(r => r.block === 7);
+    const block4RT = block4.reduce((s,r)=>s+r.rt, 0) / block4.length;
+    const block7RT = block7.reduce((s,r)=>s+r.rt, 0) / block7.length;
+    const pooledSD = calculateSD([...block4, ...block7].map(r => r.rt));
+    const dScore = (block7RT - block4RT) / pooledSD;
+    summaryStats.dScore = dScore; summaryStats.block4RT = block4RT; summaryStats.block7RT = block7RT;
+    summaryStats.pooledSD = pooledSD; summaryStats.fastPct = fastPct * 100; summaryStats.participantOK = participantOK;
+    let interpretation = '';
+    if (!participantOK) interpretation = '<span style="color:red">⚠️ Dữ liệu không hợp lệ (>10% phản hồi quá nhanh < 300ms)</span>';
+    document.getElementById('end-screen').classList.remove('hidden');
+    document.getElementById('d-score-display').innerHTML = `
+        <strong>D-Score: ${dScore.toFixed(3)}</strong> <span style="font-size:14px;color:#888;">(Version ${VERSION})</span><br>
+        ${interpretation ? `<span style="font-size:18px;">${interpretation}</span><br><br>` : '<br>'}
+        <span style="font-size:22px;">Block 4 RT: ${block4RT.toFixed(2)}ms</span><br>
+        <span style="font-size:22px;">Block 7 RT: ${block7RT.toFixed(2)}ms</span><br><br>
+        <span style="font-size:14px;color:#888;">Pooled SD: ${pooledSD.toFixed(1)}ms &nbsp;|&nbsp; Fast trials: ${(fastPct*100).toFixed(1)}% ${participantOK ? '✅' : '❌'}</span>`;
+    localStorage.setItem('IAT_' + VERSION + '_' + participantInfo.loginCode, JSON.stringify({
+        participantID: participantInfo.loginCode, testDate: participantInfo.testDate, version: VERSION,
+        dScore, interpretation, block4RT, block7RT, pooledSD, fastPct: fastPct*100, participantOK, results
+    }));
+    downloadExcel();
+    document.removeEventListener('keydown', handleKeyPress);
+}
+
+function cancelExperiment() {
+    experimentCancelled = true;
+    document.getElementById('id-screen').classList.add('hidden');
+    document.getElementById('instructions').classList.add('hidden');
+    document.getElementById('trial-screen').classList.add('hidden');
+    document.getElementById('cancelled-screen').classList.remove('hidden');
+    document.removeEventListener('keydown', handleKeyPress);
+}
+
+function downloadExcel() {
+    const headers = ['Participant ID','Version','Block','Trial','Stimulus','Correct Side','RT (ms)','Raw RT (ms)','Had Error','Excluded','D score','Block 4 RT','Block 7 RT'];
+    const dS = summaryStats.dScore ? summaryStats.dScore.toFixed(3) : '';
+    const b4 = summaryStats.block4RT ? summaryStats.block4RT.toFixed(2) : '';
+    const b7 = summaryStats.block7RT ? summaryStats.block7RT.toFixed(2) : '';
+    const rows = results.map(r => [r.participantID, VERSION, r.block, r.trial, r.stimulus, r.correctSide, r.rt, r.rawRT, r.hadError?'Yes':'No', r.excluded?'Yes':'No', dS, b4, b7]);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws['!cols'] = [{wch:18},{wch:10},{wch:8},{wch:8},{wch:16},{wch:14},{wch:10},{wch:12},{wch:12},{wch:10},{wch:10},{wch:12},{wch:12}];
+    const summaryData = [['IAT Summary - Version '+VERSION,''],['',''],['Participant ID',participantInfo.loginCode],['Version',VERSION],['',''],['D-Score',dS],['Block 4 Mean RT (ms)',b4],['Block 7 Mean RT (ms)',b7],['Pooled SD (ms)',summaryStats.pooledSD?summaryStats.pooledSD.toFixed(2):'N/A'],['Fast Trials (%)',summaryStats.fastPct?summaryStats.fastPct.toFixed(1):'N/A'],['Data Valid',summaryStats.participantOK?'Yes':'No'],['',''],['Note:','D-Score calculated using Greenwald et al. (2003) algorithm']];
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+    wsSummary['!cols'] = [{wch:25},{wch:20}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Trial Data');
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+    XLSX.writeFile(wb, `${participantInfo.loginCode}_V${VERSION}_${dS}_${b4}_${b7}.xlsx`);
+}
+
+function shuffleArray(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} }
+function hasConsecutiveSameKey(r,k,max=4) { let c=1; for(let i=r.length-1;i>=0;i--){ if(r[i]===k){c++;if(c>=max)return true;}else break; } return false; }
+function fixConsecutiveDuplicates(list) {
+    let maxAttempts=100,attempt=0;
+    while(attempt<maxAttempts){let has=false;for(let i=0;i<list.length-1;i++){if(list[i]===list[i+1]){has=true;let sw=false;for(let j=i+2;j<list.length;j++){const wd=(j<list.length-1&&list[i]===list[j+1])||(i>0&&list[j]===list[i-1])||(j>0&&list[i]===list[j-1]);if(list[j]!==list[i]&&!wd){[list[i+1],list[j]]=[list[j],list[i+1]];sw=true;break;}}if(!sw&&i>0){for(let j=0;j<i-1;j++){const wd=(j<list.length-1&&list[i+1]===list[j+1])||(j>0&&list[i+1]===list[j-1]);if(list[j]!==list[i+1]&&list[j]!==list[i]&&!wd){[list[i+1],list[j]]=[list[j],list[i+1]];sw=true;break;}}}if(sw)break;}}if(!has)break;attempt++;}return list;
+}
+function calculateSD(v) { const m=v.reduce((s,x)=>s+x,0)/v.length; return Math.sqrt(v.reduce((s,x)=>s+Math.pow(x-m,2),0)/v.length); }
+</script>
+</body>
+</html>
