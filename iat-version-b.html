@@ -300,7 +300,10 @@ function startBlock() {
     while (trialList.length < block.trials) trialList.push(...allWords);
     shuffleArray(trialList);
     fixConsecutiveDuplicates(trialList);
-    block.trialList = trialList.slice(0, block.trials);
+    const finalList = trialList.slice(0, block.trials);
+    const isCombinedBlock = block.leftWords.length > 6;
+    if (isCombinedBlock) ensureNoLongKeyRuns(finalList, block.leftWords, 4);
+    block.trialList = finalList;
     block.trialIndex = 0;
     lastWord = null;
     currentTrial = 0;
@@ -435,6 +438,49 @@ function downloadExcel() {
 
 function shuffleArray(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} }
 function hasConsecutiveSameKey(r,k,max=4) { let c=1; for(let i=r.length-1;i>=0;i--){ if(r[i]===k){c++;if(c>=max)return true;}else break; } return false; }
+
+function hasLongKeyRun(trialList, leftWords, maxRun) {
+    let run = 1;
+    for (let i = 1; i < trialList.length; i++) {
+        const prevKey = leftWords.includes(trialList[i-1]) ? 'e' : 'i';
+        const currKey = leftWords.includes(trialList[i]) ? 'e' : 'i';
+        if (currKey === prevKey) { run++; if (run > maxRun) return true; } else { run = 1; }
+    }
+    return false;
+}
+
+function ensureNoLongKeyRuns(trialList, leftWords, maxRun) {
+    let attempts = 0;
+    while (attempts < 300) {
+        if (!hasLongKeyRun(trialList, leftWords, maxRun)) return true;
+        let run = 1;
+        for (let i = 1; i < trialList.length; i++) {
+            const prevKey = leftWords.includes(trialList[i-1]) ? 'e' : 'i';
+            const currKey = leftWords.includes(trialList[i]) ? 'e' : 'i';
+            if (currKey === prevKey) {
+                run++;
+                if (run > maxRun) {
+                    let fixed = false;
+                    for (let j = i + 1; j < trialList.length; j++) {
+                        const swapKey = leftWords.includes(trialList[j]) ? 'e' : 'i';
+                        if (swapKey !== currKey) {
+                            let jRunBefore = 0;
+                            for (let k = j-1; k >= 0; k--) { if ((leftWords.includes(trialList[k]) ? 'e' : 'i') === currKey) jRunBefore++; else break; }
+                            let jRunAfter = 0;
+                            for (let k = j+1; k < trialList.length; k++) { if ((leftWords.includes(trialList[k]) ? 'e' : 'i') === currKey) jRunAfter++; else break; }
+                            if (jRunBefore + 1 + jRunAfter <= maxRun) { [trialList[i], trialList[j]] = [trialList[j], trialList[i]]; fixed = true; break; }
+                        }
+                    }
+                    if (!fixed) shuffleArray(trialList);
+                    break;
+                }
+            } else { run = 1; }
+        }
+        attempts++;
+    }
+    return !hasLongKeyRun(trialList, leftWords, maxRun);
+}
+
 function fixConsecutiveDuplicates(list) {
     let maxAttempts=100,attempt=0;
     while(attempt<maxAttempts){let has=false;for(let i=0;i<list.length-1;i++){if(list[i]===list[i+1]){has=true;let sw=false;for(let j=i+2;j<list.length;j++){const wd=(j<list.length-1&&list[i]===list[j+1])||(i>0&&list[j]===list[i-1])||(j>0&&list[i]===list[j-1]);if(list[j]!==list[i]&&!wd){[list[i+1],list[j]]=[list[j],list[i+1]];sw=true;break;}}if(!sw&&i>0){for(let j=0;j<i-1;j++){const wd=(j<list.length-1&&list[i+1]===list[j+1])||(j>0&&list[i+1]===list[j-1]);if(list[j]!==list[i+1]&&list[j]!==list[i]&&!wd){[list[i+1],list[j]]=[list[j],list[i+1]];sw=true;break;}}}if(sw)break;}}if(!has)break;attempt++;}return list;

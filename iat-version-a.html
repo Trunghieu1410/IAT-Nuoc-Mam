@@ -339,7 +339,13 @@ function startBlock() {
     while (trialList.length < block.trials) trialList.push(...allWords);
     shuffleArray(trialList);
     fixConsecutiveDuplicates(trialList);
-    block.trialList = trialList.slice(0, block.trials);
+    const finalList = trialList.slice(0, block.trials);
+    // Greenwald (2003): no more than 4 consecutive same-key trials in combined blocks
+    const isCombinedBlock = block.leftWords.length > 6;
+    if (isCombinedBlock) {
+        ensureNoLongKeyRuns(finalList, block.leftWords, 4);
+    }
+    block.trialList = finalList;
     block.trialIndex = 0;
     lastWord = null;
     currentTrial = 0;
@@ -553,6 +559,76 @@ function hasConsecutiveSameKey(r,k,max=4) {
     let c=1;
     for(let i=r.length-1;i>=0;i--){ if(r[i]===k){c++;if(c>=max)return true;}else break; }
     return false;
+}
+
+// Check if trial list has any run of more than maxRun consecutive same-key trials
+function hasLongKeyRun(trialList, leftWords, maxRun) {
+    let run = 1;
+    for (let i = 1; i < trialList.length; i++) {
+        const prevKey = leftWords.includes(trialList[i-1]) ? 'e' : 'i';
+        const currKey = leftWords.includes(trialList[i]) ? 'e' : 'i';
+        if (currKey === prevKey) {
+            run++;
+            if (run > maxRun) return true;
+        } else {
+            run = 1;
+        }
+    }
+    return false;
+}
+
+// Ensure no more than maxRun consecutive same-key trials (Greenwald 2003)
+// Uses swap-based repair first, then full reshuffle as fallback
+function ensureNoLongKeyRuns(trialList, leftWords, maxRun) {
+    let attempts = 0;
+    while (attempts < 300) {
+        if (!hasLongKeyRun(trialList, leftWords, maxRun)) return true;
+        // Find the violation and try to swap
+        let fixed = false;
+        let run = 1;
+        for (let i = 1; i < trialList.length; i++) {
+            const prevKey = leftWords.includes(trialList[i-1]) ? 'e' : 'i';
+            const currKey = leftWords.includes(trialList[i]) ? 'e' : 'i';
+            if (currKey === prevKey) {
+                run++;
+                if (run > maxRun) {
+                    // Try to swap trialList[i] with a later trial that has a different key
+                    for (let j = i + 1; j < trialList.length; j++) {
+                        const swapKey = leftWords.includes(trialList[j]) ? 'e' : 'i';
+                        if (swapKey !== currKey) {
+                            // Check swap won't create new violation at position j
+                            const jPrevKey = j > 0 ? (leftWords.includes(trialList[j-1]) ? 'e' : 'i') : null;
+                            const jNextKey = j < trialList.length-1 ? (leftWords.includes(trialList[j+1]) ? 'e' : 'i') : null;
+                            // currKey would go to position j — check neighbors
+                            let jRunBefore = 0;
+                            for (let k = j-1; k >= 0; k--) {
+                                if ((leftWords.includes(trialList[k]) ? 'e' : 'i') === currKey) jRunBefore++; else break;
+                            }
+                            let jRunAfter = 0;
+                            for (let k = j+1; k < trialList.length; k++) {
+                                if ((leftWords.includes(trialList[k]) ? 'e' : 'i') === currKey) jRunAfter++; else break;
+                            }
+                            if (jRunBefore + 1 + jRunAfter <= maxRun) {
+                                [trialList[i], trialList[j]] = [trialList[j], trialList[i]];
+                                fixed = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!fixed) {
+                        // Full reshuffle as fallback
+                        shuffleArray(trialList);
+                        fixed = true;
+                    }
+                    break;
+                }
+            } else {
+                run = 1;
+            }
+        }
+        attempts++;
+    }
+    return !hasLongKeyRun(trialList, leftWords, maxRun);
 }
 
 function fixConsecutiveDuplicates(list) {
