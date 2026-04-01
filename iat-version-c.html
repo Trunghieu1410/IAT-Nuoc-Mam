@@ -390,7 +390,9 @@ function finishExperiment() {
     const block4RT = block4.reduce((s,r)=>s+r.rt, 0) / block4.length;
     const block7RT = block7.reduce((s,r)=>s+r.rt, 0) / block7.length;
     const pooledSD = calculateSD([...block4, ...block7].map(r => r.rt));
-    const dScore = (block7RT - block4RT) / pooledSD;
+    // Version C: Block4 = TT+Negative (incompatible), Block7 = TT+Positive (compatible)
+    // Reverse sign so positive D = preference for Traditional
+    const dScore = (block4RT - block7RT) / pooledSD;
     summaryStats.dScore = dScore; summaryStats.block4RT = block4RT; summaryStats.block7RT = block7RT;
     summaryStats.pooledSD = pooledSD; summaryStats.fastPct = fastPct * 100; summaryStats.participantOK = participantOK;
     let interpretation = '';
