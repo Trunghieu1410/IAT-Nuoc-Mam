@@ -112,16 +112,19 @@ function uploadToGoogleDrive(wb, filename) {
         try {
             console.log('[Drive upload] Preparing', filename, '...');
             const base64Data = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+            // Sent as application/x-www-form-urlencoded (via URLSearchParams) so the
+            // Apps Script doPost(e) can read it through e.parameter.* — matching
+            // fileName / mimeType / data field names used on the server side.
+            const params = new URLSearchParams();
+            params.append('fileName', filename);
+            params.append('mimeType', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            params.append('data', base64Data);
             fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors', // Apps Script doesn't return readable CORS headers; response is opaque
-                body: JSON.stringify({
-                    filename: filename,
-                    fileData: base64Data,
-                    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                })
+                body: params
             }).then(() => {
-                console.log('[Drive upload] Request sent for', filename, '(response is opaque under no-cors, so "sent" does not guarantee it was saved — check Drive/Apps Script logs to confirm).');
+                console.log('[Drive upload] Request sent for', filename, '(response is opaque under no-cors, so "sent" does not guarantee it was saved — check Apps Script Executions log to confirm).');
             }).catch(err => console.error('[Drive upload] fetch failed for', filename, ':', err));
         } catch (err) {
             console.error('[Drive upload] Error preparing file for', filename, ':', err);
