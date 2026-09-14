@@ -456,7 +456,10 @@ function finishExperiment() {
         participantID: participantInfo.loginCode, testDate: participantInfo.testDate, version: VERSION,
         dScore, interpretation, block3RT, block4RT, block6RT, block7RT, pooledSD1, pooledSD2, fastPct: fastPct*100, participantOK, results
     }));
-    downloadExcel();
+    const savedFile = downloadExcel();
+    // Google Drive upload is scheduled well after — and fully independent of —
+    // the local download call above, so it can never interfere with it.
+    setTimeout(() => uploadToGoogleDrive(savedFile.wb, savedFile.filename), 1000);
     document.removeEventListener('keydown', handleKeyPress);
 }
 
@@ -490,12 +493,11 @@ function downloadExcel() {
     const filename = `${participantInfo.loginCode}_V${VERSION}_${dS}_${b4}_${b7}.xlsx`;
     // Local download happens FIRST and unconditionally — the participant
     // always gets their file even if the Drive upload below fails/hangs/errors.
+    // downloadExcel() ONLY builds the workbook and triggers the local save.
+    // It does nothing else, so there is nothing that can compete with or
+    // delay the browser's own download/"Save As" negotiation for this file.
     XLSX.writeFile(wb, filename);
-    try {
-        uploadToGoogleDrive(wb, filename);
-    } catch (err) {
-        console.error('Google Drive upload skipped due to error:', err);
-    }
+    return { wb, filename };
 }
 
 function shuffleArray(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} }
