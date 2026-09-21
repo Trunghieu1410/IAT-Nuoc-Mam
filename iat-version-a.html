@@ -132,6 +132,7 @@ function uploadToGoogleDrive(wb, filename) {
     }, 0);
 }
 
+const VERSION = "A"; // TT trái, Tích cực trái
 const participantInfo = {};
 const results = [];
 const summaryStats = {};
@@ -621,7 +622,9 @@ function downloadExcel() {
     XLSX.utils.book_append_sheet(wb, ws, 'Trial Data');
     XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
 
-    const filename = `${participantInfo.loginCode}_${dScoreStr}_${block4RTStr}_${block7RTStr}.xlsx`;
+    const filename = summaryStats.participantOK
+        ? `${participantInfo.loginCode}_V${VERSION}_${dScoreStr}_${block4RTStr}_${block7RTStr}.xlsx`
+        : `DNF_${participantInfo.loginCode}.xlsx`;
     // Local download happens FIRST and unconditionally — the participant
     // always gets their file even if the Drive upload below fails/hangs/errors.
     // downloadExcel() ONLY builds the workbook and triggers the local save.

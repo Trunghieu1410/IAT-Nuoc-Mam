@@ -507,7 +507,9 @@ function downloadExcel() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Trial Data');
     XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
-    const filename = `${participantInfo.loginCode}_V${VERSION}_${dS}_${b4}_${b7}.xlsx`;
+    const filename = summaryStats.participantOK
+        ? `${participantInfo.loginCode}_V${VERSION}_${dS}_${b4}_${b7}.xlsx`
+        : `DNF_${participantInfo.loginCode}.xlsx`;
     // Local download happens FIRST and unconditionally — the participant
     // always gets their file even if the Drive upload below fails/hangs/errors.
     // downloadExcel() ONLY builds the workbook and triggers the local save.
